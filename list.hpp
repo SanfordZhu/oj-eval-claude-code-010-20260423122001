@@ -8,189 +8,420 @@
 #include <cstddef>
 
 namespace sjtu {
-/**
- * a data container like std::list
- * allocate random memory addresses for data and they are doubly-linked in a list.
- */
 template<typename T>
 class list {
 protected:
     class node {
     public:
-        /**
-         * add data members and constructors & destructor
-         */
+        T *data;
+        node *prev;
+        node *next;
 
+        node() : data(nullptr), prev(nullptr), next(nullptr) {}
+
+        node(const T &value) : data(new T(value)), prev(nullptr), next(nullptr) {}
+
+        ~node() {
+            delete data;
+        }
     };
 
 protected:
-    /**
-     * add data members for linked list as protected members
-     */
+    node *head;
+    node *tail;
+    size_t len;
 
-    /**
-     * insert node cur before node pos
-     * return the inserted node cur
-     */
-    node *insert(node *pos, node *cur) {}
-    /**
-     * remove node pos from list (no need to delete the node)
-     * return the removed node pos
-     */
-    node *erase(node *pos) {}
+    node *insert(node *pos, node *cur) {
+        cur->prev = pos->prev;
+        cur->next = pos;
+        pos->prev->next = cur;
+        pos->prev = cur;
+        return cur;
+    }
+
+    node *erase(node *pos) {
+        node *ret = pos->next;
+        pos->prev->next = pos->next;
+        pos->next->prev = pos->prev;
+        return ret;
+    }
 
 public:
     class const_iterator;
     class iterator {
     private:
-        /**
-         * TODO add data members
-         *   just add whatever you want.
-         */
+        list *container;
+        node *current;
 
     public:
-        /**
-         * iter++
-         */
-        iterator operator++(int) {}
-        /**
-         * ++iter
-         */
-        iterator & operator++() {}
-        /**
-         * iter--
-         */
-        iterator operator--(int) {}
-        /**
-         * --iter
-         */
-        iterator & operator--() {}
-        /**
-         * TODO *it
-         * remember to throw if iterator is invalid
-         */
-        T & operator *() const {}
-        /**
-         * TODO it->field
-         * remember to throw if iterator is invalid
-         */
-        T * operator ->() const {}
-        /**
-         * a operator to check whether two iterators are same (pointing to the same memory).
-         */
-        bool operator==(const iterator &rhs) const {}
-        bool operator==(const const_iterator &rhs) const {}
-        /**
-         * some other operator for iterator.
-         */
-        bool operator!=(const iterator &rhs) const {}
-        bool operator!=(const const_iterator &rhs) const {}
+        iterator() : container(nullptr), current(nullptr) {}
+
+        iterator(list *c, node *n) : container(c), current(n) {}
+
+        iterator operator++(int) {
+            if (current == container->tail) {
+                throw invalid_iterator();
+            }
+            iterator tmp = *this;
+            current = current->next;
+            return tmp;
+        }
+
+        iterator & operator++() {
+            if (current == container->tail) {
+                throw invalid_iterator();
+            }
+            current = current->next;
+            return *this;
+        }
+
+        iterator operator--(int) {
+            if (current == container->head->next) {
+                throw invalid_iterator();
+            }
+            iterator tmp = *this;
+            current = current->prev;
+            return tmp;
+        }
+
+        iterator & operator--() {
+            if (current == container->head->next) {
+                throw invalid_iterator();
+            }
+            current = current->prev;
+            return *this;
+        }
+
+        T & operator *() const {
+            if (current == container->head || current == container->tail) {
+                throw invalid_iterator();
+            }
+            return *(current->data);
+        }
+
+        T * operator ->() const {
+            if (current == container->head || current == container->tail) {
+                throw invalid_iterator();
+            }
+            return current->data;
+        }
+
+        bool operator==(const iterator &rhs) const {
+            return container == rhs.container && current == rhs.current;
+        }
+
+        bool operator==(const const_iterator &rhs) const {
+            return container == rhs.container && current == rhs.current;
+        }
+
+        bool operator!=(const iterator &rhs) const {
+            return !(*this == rhs);
+        }
+
+        bool operator!=(const const_iterator &rhs) const {
+            return !(*this == rhs);
+        }
+
+        friend class list;
+        friend class const_iterator;
     };
-    /**
-     * TODO
-     * has same function as iterator, just for a const object.
-     * should be able to construct from an iterator.
-     */
+
     class const_iterator {
+    private:
+        const list *container;
+        node *current;
 
+    public:
+        const_iterator() : container(nullptr), current(nullptr) {}
+
+        const_iterator(const list *c, node *n) : container(c), current(n) {}
+
+        const_iterator(const iterator &other) : container(other.container), current(other.current) {}
+
+        const_iterator operator++(int) {
+            if (current == container->tail) {
+                throw invalid_iterator();
+            }
+            const_iterator tmp = *this;
+            current = current->next;
+            return tmp;
+        }
+
+        const_iterator & operator++() {
+            if (current == container->tail) {
+                throw invalid_iterator();
+            }
+            current = current->next;
+            return *this;
+        }
+
+        const_iterator operator--(int) {
+            if (current == container->head->next) {
+                throw invalid_iterator();
+            }
+            const_iterator tmp = *this;
+            current = current->prev;
+            return tmp;
+        }
+
+        const_iterator & operator--() {
+            if (current == container->head->next) {
+                throw invalid_iterator();
+            }
+            current = current->prev;
+            return *this;
+        }
+
+        const T & operator *() const {
+            if (current == container->head || current == container->tail) {
+                throw invalid_iterator();
+            }
+            return *(current->data);
+        }
+
+        const T * operator ->() const {
+            if (current == container->head || current == container->tail) {
+                throw invalid_iterator();
+            }
+            return current->data;
+        }
+
+        bool operator==(const iterator &rhs) const {
+            return container == rhs.container && current == rhs.current;
+        }
+
+        bool operator==(const const_iterator &rhs) const {
+            return container == rhs.container && current == rhs.current;
+        }
+
+        bool operator!=(const iterator &rhs) const {
+            return !(*this == rhs);
+        }
+
+        bool operator!=(const const_iterator &rhs) const {
+            return !(*this == rhs);
+        }
+
+        friend class list;
     };
-    /**
-     * TODO Constructs
-     * Atleast two: default constructor, copy constructor
-     */
-    list() {}
-    list(const list &other) {}
-    /**
-     * TODO Destructor
-     */
-    virtual ~list() {}
-    /**
-     * TODO Assignment operator
-     */
-    list &operator=(const list &other) {}
-    /**
-     * access the first / last element
-     * throw container_is_empty when the container is empty.
-     */
-    const T & front() const {}
-    const T & back() const {}
-    /**
-     * returns an iterator to the beginning.
-     */
-    iterator begin() {}
-    const_iterator cbegin() const {}
-    /**
-     * returns an iterator to the end.
-     */
-    iterator end() {}
-    const_iterator cend() const {}
-    /**
-     * checks whether the container is empty.
-     */
-    virtual bool empty() const {}
-    /**
-     * returns the number of elements
-     */
-    virtual size_t size() const {}
 
-    /**
-     * clears the contents
-     */
-    virtual void clear() {}
-    /**
-     * insert value before pos (pos may be the end() iterator)
-     * return an iterator pointing to the inserted value
-     * throw if the iterator is invalid
-     */
-    virtual iterator insert(iterator pos, const T &value) {}
-    /**
-     * remove the element at pos (the end() iterator is invalid)
-     * returns an iterator pointing to the following element, if pos pointing to the last element, end() will be returned.
-     * throw if the container is empty, the iterator is invalid
-     */
-    virtual iterator erase(iterator pos) {}
-    /**
-     * adds an element to the end
-     */
-    void push_back(const T &value) {}
-    /**
-     * removes the last element
-     * throw when the container is empty.
-     */
-    void pop_back() {}
-    /**
-     * inserts an element to the beginning.
-     */
-    void push_front(const T &value) {}
-    /**
-     * removes the first element.
-     * throw when the container is empty.
-     */
-    void pop_front() {}
-    /**
-     * sort the values in ascending order with operator< of T
-     */
-    void sort() {}
-    /**
-     * merge two sorted lists into one (both in ascending order)
-     * compare with operator< of T
-     * container other becomes empty after the operation
-     * for equivalent elements in the two lists, the elements from *this shall always precede the elements from other
-     * the order of equivalent elements of *this and other does not change.
-     * no elements are copied or moved
-     */
-    void merge(list &other) {}
-    /**
-     * reverse the order of the elements
-     * no elements are copied or moved
-     */
-    void reverse() {}
-    /**
-     * remove all consecutive duplicate elements from the container
-     * only the first element in each group of equal elements is left
-     * use operator== of T to compare the elements.
-     */
-    void unique() {}
+    list() {
+        head = new node();
+        tail = new node();
+        head->next = tail;
+        tail->prev = head;
+        len = 0;
+    }
+
+    list(const list &other) {
+        head = new node();
+        tail = new node();
+        head->next = tail;
+        tail->prev = head;
+        len = 0;
+
+        node *p = other.head->next;
+        while (p != other.tail) {
+            push_back(*(p->data));
+            p = p->next;
+        }
+    }
+
+    virtual ~list() {
+        clear();
+        delete head;
+        delete tail;
+    }
+
+    list &operator=(const list &other) {
+        if (this == &other) return *this;
+
+        clear();
+        node *p = other.head->next;
+        while (p != other.tail) {
+            push_back(*(p->data));
+            p = p->next;
+        }
+        return *this;
+    }
+
+    const T & front() const {
+        if (empty()) {
+            throw container_is_empty();
+        }
+        return *(head->next->data);
+    }
+
+    const T & back() const {
+        if (empty()) {
+            throw container_is_empty();
+        }
+        return *(tail->prev->data);
+    }
+
+    iterator begin() {
+        return iterator(this, head->next);
+    }
+
+    const_iterator cbegin() const {
+        return const_iterator(this, head->next);
+    }
+
+    iterator end() {
+        return iterator(this, tail);
+    }
+
+    const_iterator cend() const {
+        return const_iterator(this, tail);
+    }
+
+    virtual bool empty() const {
+        return len == 0;
+    }
+
+    virtual size_t size() const {
+        return len;
+    }
+
+    virtual void clear() {
+        node *p = head->next;
+        while (p != tail) {
+            node *tmp = p;
+            p = p->next;
+            delete tmp;
+        }
+        head->next = tail;
+        tail->prev = head;
+        len = 0;
+    }
+
+    virtual iterator insert(iterator pos, const T &value) {
+        if (pos.container != this) {
+            throw invalid_iterator();
+        }
+        node *newNode = new node(value);
+        insert(pos.current, newNode);
+        len++;
+        return iterator(this, newNode);
+    }
+
+    virtual iterator erase(iterator pos) {
+        if (pos.container != this) {
+            throw invalid_iterator();
+        }
+        if (pos.current == head || pos.current == tail) {
+            throw invalid_iterator();
+        }
+        if (empty()) {
+            throw container_is_empty();
+        }
+        node *nextNode = erase(pos.current);
+        delete pos.current;
+        len--;
+        return iterator(this, nextNode);
+    }
+
+    void push_back(const T &value) {
+        insert(end(), value);
+    }
+
+    void pop_back() {
+        if (empty()) {
+            throw container_is_empty();
+        }
+        erase(--end());
+    }
+
+    void push_front(const T &value) {
+        insert(begin(), value);
+    }
+
+    void pop_front() {
+        if (empty()) {
+            throw container_is_empty();
+        }
+        erase(begin());
+    }
+
+    void sort() {
+        if (len <= 1) return;
+
+        node **arr = new node*[len];
+        node *p = head->next;
+        for (size_t i = 0; i < len; i++) {
+            arr[i] = p;
+            p = p->next;
+        }
+
+        sjtu::sort<node*>(arr, arr + len, [](const node *a, const node *b) {
+            return *(a->data) < *(b->data);
+        });
+
+        head->next = arr[0];
+        arr[0]->prev = head;
+        for (size_t i = 0; i < len - 1; i++) {
+            arr[i]->next = arr[i + 1];
+            arr[i + 1]->prev = arr[i];
+        }
+        arr[len - 1]->next = tail;
+        tail->prev = arr[len - 1];
+
+        delete[] arr;
+    }
+
+    void merge(list &other) {
+        if (this == &other) return;
+
+        node *p1 = head->next;
+        node *p2 = other.head->next;
+
+        while (p1 != tail && p2 != other.tail) {
+            if (*(p2->data) < *(p1->data)) {
+                node *next2 = p2->next;
+                other.erase(p2);
+                insert(p1, p2);
+                len++;
+                p2 = next2;
+            } else {
+                p1 = p1->next;
+            }
+        }
+
+        while (p2 != other.tail) {
+            node *next2 = p2->next;
+            other.erase(p2);
+            insert(tail, p2);
+            len++;
+            p2 = next2;
+        }
+    }
+
+    void reverse() {
+        node *p = head;
+        while (p != nullptr) {
+            node *tmp = p->next;
+            p->next = p->prev;
+            p->prev = tmp;
+            p = tmp;
+        }
+        std::swap(head, tail);
+    }
+
+    void unique() {
+        if (len <= 1) return;
+
+        node *p = head->next;
+        while (p != tail && p->next != tail) {
+            if (*(p->data) == *(p->next->data)) {
+                node *toDelete = p->next;
+                erase(toDelete);
+                delete toDelete;
+                len--;
+            } else {
+                p = p->next;
+            }
+        }
+    }
 };
 
 }
